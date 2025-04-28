@@ -7,6 +7,7 @@ import { db } from "@/app/server/db";
 import { schema } from "@/app/server/db/schema";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
+import { tasks } from "@trigger.dev/sdk/v3";
 
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -64,50 +65,52 @@ imageRoutes.post("/", async (c) => {
             createdAt: new Date(),
         });
 
-        const imageFile = await toFile(file, null, {
-            type: file.type,
-        });
+        await tasks.trigger("image-edit", { url: originalUrl, prompt, imageId });
 
-        const rsp = await client.images.edit({
-            model: "gpt-image-1",
-            image: imageFile,
-            prompt: prompt,
-        }) as { data: { b64_json: string }[] };
+        // const imageFile = await toFile(file, null, {
+        //     type: file.type,
+        // });
 
-        if (!rsp.data[0]?.b64_json) {
-            // Update status to failed if image generation fails
-            await db.update(schema.image)
-                .set({ status: "failed" })
-                .where(eq(schema.image.id, imageId));
-            return c.json({ error: "Failed to generate image" }, 500);
-        }
+        // const rsp = await client.images.edit({
+        //     model: "gpt-image-1",
+        //     image: imageFile,
+        //     prompt: prompt,
+        // }) as { data: { b64_json: string }[] };
 
-        // Convert base64 to buffer
-        const imageBytes = Buffer.from(rsp.data[0].b64_json, "base64");
+        // if (!rsp.data[0]?.b64_json) {
+        //     // Update status to failed if image generation fails
+        //     await db.update(schema.image)
+        //         .set({ status: "failed" })
+        //         .where(eq(schema.image.id, imageId));
+        //     return c.json({ error: "Failed to generate image" }, 500);
+        // }
+
+        // // Convert base64 to buffer
+        // const imageBytes = Buffer.from(rsp.data[0].b64_json, "base64");
         
-        // Generate a unique filename for the edited image
-        const editedTimestamp = new Date().getTime();
-        const editedFileName = `${editedTimestamp}-edited.png`;
+        // // Generate a unique filename for the edited image
+        // const editedTimestamp = new Date().getTime();
+        // const editedFileName = `${editedTimestamp}-edited.png`;
 
-        // Upload edited image to S3
-        await storage.send(new PutObjectCommand({
-            Bucket: process.env.BUCKET!,
-            Key: editedFileName,
-            Body: imageBytes,
-            ContentType: "image/png",
-        }));
+        // // Upload edited image to S3
+        // await storage.send(new PutObjectCommand({
+        //     Bucket: process.env.BUCKET!,
+        //     Key: editedFileName,
+        //     Body: imageBytes,
+        //     ContentType: "image/png",
+        // }));
 
-        const editedUrl = `${process.env.AWS_ENDPOINT_URL_S3}/${process.env.BUCKET}/${editedFileName}`;
+        // const editedUrl = `${process.env.AWS_ENDPOINT_URL_S3}/${process.env.BUCKET}/${editedFileName}`;
 
-        // Update image record with edited URL and completed status
-        await db.update(schema.image)
-            .set({ 
-                editedUrl,
-                status: "completed"
-            })
-            .where(eq(schema.image.id, imageId));
+        // // Update image record with edited URL and completed status
+        // await db.update(schema.image)
+        //     .set({ 
+        //         editedUrl,
+        //         status: "completed"
+        //     })
+        //     .where(eq(schema.image.id, imageId));
 
-        return c.json({ url: editedUrl });
+        return c.json({ status: "success", message: "Image edit task triggered" });
     } catch (error) {
         console.error("Error processing image:", error);
         return c.json({ error: "Failed to process image" }, 500);
@@ -136,4 +139,28 @@ imageRoutes.get("/:id", async (c) => {
     if(!image) return c.body("Image not found", 404);
 
     return c.json(image);
+});
+
+imageRoutes.post("/webhook", async (c) => {
+    const body = await c.req.json();
+    const { imageId, editedUrl } = body;
+
+    if (!imageId || !editedUrl) {
+        return c.json({ error: "Missing required fields" }, 400);
+    }
+
+    try {
+        // Update the image record with the edited URL and set status to completed
+        await db.update(schema.image)
+            .set({ 
+                editedUrl,
+                status: "completed"
+            })
+            .where(eq(schema.image.id, imageId));
+
+        return c.json({ status: "success", message: "Image updated successfully" });
+    } catch (error) {
+        console.error("Error updating image:", error);
+        return c.json({ error: "Failed to update image" }, 500);
+    }
 });
