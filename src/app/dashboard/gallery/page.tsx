@@ -3,9 +3,12 @@
 import { useGetImages } from '@/app/hooks/useGetImages';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ImagePopout } from '@/components/image-popout';
+import { useState } from 'react';
 
 export default function GalleryPage() {
   const { data: images, isLoading, error } = useGetImages();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -34,7 +37,11 @@ export default function GalleryPage() {
       <h1 className="text-2xl font-bold mb-6">Gallery</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {images?.map((image) => (
-          <div key={image.id} className="relative aspect-square rounded-lg overflow-hidden">
+          <div 
+            key={image.id} 
+            className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setSelectedImage(image.editedUrl || image.originalUrl)}
+          >
             <Image
               src={image.editedUrl || image.originalUrl}
               alt="Generated image"
@@ -49,6 +56,12 @@ export default function GalleryPage() {
           </div>
         ))}
       </div>
+      {selectedImage && (
+        <ImagePopout
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
     </div>
   );
 }
