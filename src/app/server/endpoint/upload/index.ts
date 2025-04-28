@@ -1,6 +1,6 @@
 import { storage } from "@/lib/storage";
 import { Hono } from "hono";
-
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 export const upload = new Hono()
 
 upload.post("/", async (c) => {
@@ -14,14 +14,13 @@ upload.post("/", async (c) => {
       const timestamp = new Date().getTime();
       const fileName = `${timestamp}-${file.name}`;
 
-      await storage.write(fileName, file)
+      await storage.send(new PutObjectCommand({
+        Bucket: process.env.BUCKET!,
+        Key: fileName,
+        Body: Buffer.from(await file.arrayBuffer()),
+      }));
 
-      const uploadedFile = await storage.file(fileName)
-
-      const presignedUrl = uploadedFile.presign({
-        method: "GET",
-        expiresIn: 21600, // URL expires in 6 hours
-      });
-  
-      return c.json({ url: presignedUrl });
+      const url = `${process.env.AWS_ENDPOINT_URL_S3}/${process.env.BUCKET}/${fileName}`;
+      
+      return c.json({ url });
 })
