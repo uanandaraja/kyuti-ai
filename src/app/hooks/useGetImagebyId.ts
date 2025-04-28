@@ -10,7 +10,7 @@ interface Image {
 }
 
 export function useGetImagebyId(id: string) {
-  return useQuery<Image>({
+  return useQuery<Image[]>({
     queryKey: ['image', id],
     queryFn: async () => {
       const response = await fetch(`/api/image/${id}`, {
@@ -24,5 +24,10 @@ export function useGetImagebyId(id: string) {
       return response.json();
     },
     enabled: !!id, // Only run the query if we have an ID
+    refetchInterval: (query) => {
+      // Only poll if the image is still processing
+      return query.state.data?.[0]?.status === 'processing' ? 2000 : false;
+    },
+    refetchIntervalInBackground: true, // Continue polling even when tab is not active
   });
 }

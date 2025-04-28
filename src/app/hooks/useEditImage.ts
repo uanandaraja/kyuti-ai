@@ -2,7 +2,11 @@ import { useMutation } from '@tanstack/react-query';
 
 interface EditImageResponse {
   success: boolean;
-  data?: any;
+  data?: {
+    status: string;
+    message: string;
+    id: string;
+  };
   error?: string;
 }
 

@@ -110,7 +110,7 @@ imageRoutes.post("/", async (c) => {
         //     })
         //     .where(eq(schema.image.id, imageId));
 
-        return c.json({ status: "success", message: "Image edit task triggered" });
+        return c.json({ status: "success", message: "Image edit task triggered", id: imageId });
     } catch (error) {
         console.error("Error processing image:", error);
         return c.json({ error: "Failed to process image" }, 500);
