@@ -44,7 +44,6 @@ export default function Dashboard() {
         },
         onError: (error) => {
           console.error("Error editing image:", error)
-          // You can add error handling here
         },
       }
     )
