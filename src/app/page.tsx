@@ -9,15 +9,12 @@ export default function Home() {
           <a
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 sm:w-auto"
             href="/sign-in"
-            rel="noopener noreferrer"
           >
             Coba Sekarang
           </a>
           <a
             className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 w-auto md:w-[140px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#"
           >
             Lihat Contoh
           </a>
