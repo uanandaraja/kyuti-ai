@@ -10,9 +10,9 @@ export const promptRoutes = new Hono<{
 }>();
 
 promptRoutes.get("/", async (c) => {
-    const session = c.get("session")
+    // const session = c.get("session")
     
-    if(!session) return c.body(null, 403);
+    // if(!session) return c.body("Unauthorized", 403);
 
     const prompts = await db.query.prompt.findMany();
     return c.json({ prompts });
